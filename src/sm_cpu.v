@@ -71,12 +71,16 @@ module sm_cpu
     //alu
     wire [31:0] srcB = aluSrc ? (signExtend ? signImm : zeroImm) : rd2;
 
+    //shift
+    wire shiftFromReg;
+    wire [4:0] shift = shiftFromReg ? (rd1 & 5'b11111) : instr[10:6];
+
     sm_alu alu
     (
         .srcA       ( rd1          ),
         .srcB       ( srcB         ),
         .oper       ( aluControl   ),
-        .shift      ( instr[10:6 ] ),
+        .shift      ( shift        ),
         .zero       ( aluZero      ),
         .result     ( wd3          ) 
     );
@@ -84,15 +88,16 @@ module sm_cpu
     //control
     sm_control sm_control
     (
-        .cmdOper    ( instr[31:26] ),
-        .cmdFunk    ( instr[ 5:0 ] ),
-        .aluZero    ( aluZero      ),
-        .pcSrc      ( pcSrc        ),
-        .signExtend ( signExtend   ),
-        .regDst     ( regDst       ), 
-        .regWrite   ( regWrite     ), 
-        .aluSrc     ( aluSrc       ),
-        .aluControl ( aluControl   )
+        .cmdOper      ( instr[31:26] ),
+        .cmdFunk      ( instr[ 5:0 ] ),
+        .aluZero      ( aluZero      ),
+        .pcSrc        ( pcSrc        ),
+        .signExtend   ( signExtend   ),
+        .shiftFromReg ( shiftFromReg ),
+        .regDst       ( regDst       ),
+        .regWrite     ( regWrite     ),
+        .aluSrc       ( aluSrc       ),
+        .aluControl   ( aluControl   )
     );
 
 endmodule
@@ -104,6 +109,7 @@ module sm_control
     input            aluZero,
     output           pcSrc,
     output           signExtend,
+    output           shiftFromReg,
     output reg       regDst, 
     output reg       regWrite, 
     output reg       aluSrc,
@@ -112,8 +118,10 @@ module sm_control
     reg          branch;
     reg          condZero;
     reg          _signExtend = 1'b1;
+    reg          _shiftFromReg = 1'b0;
     assign pcSrc = branch & (aluZero == condZero);
     assign signExtend = _signExtend;
+    assign shiftFromReg = _shiftFromReg;
 
     always @ (*) begin
         branch      = 1'b0;
@@ -131,6 +139,7 @@ module sm_control
             { `C_SPEC,  `F_SRL  } : begin regDst = 1'b1; regWrite = 1'b1; aluControl = `ALU_SRL;  end
             { `C_SPEC,  `F_SLTU } : begin regDst = 1'b1; regWrite = 1'b1; aluControl = `ALU_SLTU; end
             { `C_SPEC,  `F_SUBU } : begin regDst = 1'b1; regWrite = 1'b1; aluControl = `ALU_SUBU; end
+            { `C_SPEC,  `F_SRLV } : begin regDst = 1'b1; _shiftFromReg = 1'b1; regWrite = 1'b1; aluControl = `ALU_SRL; end
 
             { `C_ADDIU, `F_ANY  } : begin regWrite = 1'b1; aluSrc = 1'b1; aluControl = `ALU_ADD;  end
             { `C_LUI,   `F_ANY  } : begin regWrite = 1'b1; aluSrc = 1'b1; aluControl = `ALU_LUI;  end
