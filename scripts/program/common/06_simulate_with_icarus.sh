@@ -13,6 +13,8 @@ iverilog -g2005 -D SIMULATION -D ICARUS -I ../../../src -I ../../../testbench -s
 vvp -la.lst -n a.out -vcd
 
 # output
-gtkwave dump.vcd
+if [[ $1 != "-i" ]]; then
+	gtkwave dump.vcd
+fi
 
 cd ..
