@@ -63,11 +63,13 @@ module sm_cpu
     );
 
     //sign extension
+    wire signExtend;
     wire [31:0] signImm = { {16 { instr[15] }}, instr[15:0] };
+    wire [31:0] zeroImm = { 16'h0, instr[15:0] };
     assign pcBranch = pcNext + signImm;
 
     //alu
-    wire [31:0] srcB = aluSrc ? signImm : rd2;
+    wire [31:0] srcB = aluSrc ? (signExtend ? signImm : zeroImm) : rd2;
 
     sm_alu alu
     (
@@ -85,7 +87,8 @@ module sm_cpu
         .cmdOper    ( instr[31:26] ),
         .cmdFunk    ( instr[ 5:0 ] ),
         .aluZero    ( aluZero      ),
-        .pcSrc      ( pcSrc        ), 
+        .pcSrc      ( pcSrc        ),
+        .signExtend ( signExtend   ),
         .regDst     ( regDst       ), 
         .regWrite   ( regWrite     ), 
         .aluSrc     ( aluSrc       ),
@@ -99,7 +102,8 @@ module sm_control
     input      [5:0] cmdOper,
     input      [5:0] cmdFunk,
     input            aluZero,
-    output           pcSrc, 
+    output           pcSrc,
+    output           signExtend,
     output reg       regDst, 
     output reg       regWrite, 
     output reg       aluSrc,
@@ -107,7 +111,9 @@ module sm_control
 );
     reg          branch;
     reg          condZero;
+    reg          _signExtend = 1'b1;
     assign pcSrc = branch & (aluZero == condZero);
+    assign signExtend = _signExtend;
 
     always @ (*) begin
         branch      = 1'b0;
@@ -128,6 +134,7 @@ module sm_control
 
             { `C_ADDIU, `F_ANY  } : begin regWrite = 1'b1; aluSrc = 1'b1; aluControl = `ALU_ADD;  end
             { `C_LUI,   `F_ANY  } : begin regWrite = 1'b1; aluSrc = 1'b1; aluControl = `ALU_LUI;  end
+            { `C_ANDI,  `F_ANY  } : begin regWrite = 1'b1; _signExtend = 1'b0; aluSrc = 1'b1; aluControl = `ALU_AND; end
 
             { `C_BEQ,   `F_ANY  } : begin branch = 1'b1; condZero = 1'b1; aluControl = `ALU_SUBU; end
             { `C_BNE,   `F_ANY  } : begin branch = 1'b1; aluControl = `ALU_SUBU; end
@@ -156,6 +163,7 @@ module sm_alu
             `ALU_SLTU : result = (srcA < srcB) ? 1 : 0;
             `ALU_SUBU : result = srcA - srcB;
             `ALU_SLTZ : result = (srcA & 'h80000000) ? 1 : 0;
+            `ALU_AND  : result = srcA & srcB;
         endcase
     end
 
