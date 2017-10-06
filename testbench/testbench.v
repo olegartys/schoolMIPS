@@ -104,6 +104,7 @@ module sm_testbench;
 
                 { `C_BEQ,   `F_ANY  } : $write ("beq   $%1d, $%1d, %1d", cmdRs, cmdRt, cmdImmS + 1);
                 { `C_BNE,   `F_ANY  } : $write ("bne   $%1d, $%1d, %1d", cmdRs, cmdRt, cmdImmS + 1);
+                { `C_BGEZ,  `F_ANY  } : $write ("bgez   $%1d, %1d", cmdRs, cmdImmS + 1);
             endcase
         end
 
