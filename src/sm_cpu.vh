@@ -15,6 +15,8 @@
 `define ALU_SRL     3'b011
 `define ALU_SLTU    3'b100
 `define ALU_SUBU    3'b101
+`define ALU_SLTZ    3'b110
+`define ALU_AND     3'b111
 
 //instruction operation code
 `define C_SPEC      6'b000000 // Special instructions (depends on function field)
@@ -26,6 +28,13 @@
                               //         Rt = Immed << 16
 `define C_BNE       6'b000101 // I-type, Branch on Not Equal
                               //         if (Rs != Rt) PC += (int)offset
+`define C_BGEZ      6'b000001 // I-type, Bran on Greater or Equal to Zero
+					//			  if (Rs >= 0) 
+					//			      PC += (int)offset
+					// 		  else
+					// 		  		PC += 1
+
+`define C_ANDI      6'b001100										
 
 //instruction function field
 `define F_ADDU      6'b100001 // R-type, Integer Add Unsigned
@@ -34,6 +43,9 @@
                               //         Rd = Rs | Rt
 `define F_SRL       6'b000010 // R-type, Shift Right Logical
                               //         Rd = Rs∅ >> shift
+
+`define F_SRLV      6'b00110
+
 `define F_SLTU      6'b101011 // R-type, Set on Less Than Unsigned
                               //         Rd = (Rs∅ < Rt∅) ? 1 : 0
 `define F_SUBU      6'b100011 // R-type, Unsigned Subtract
