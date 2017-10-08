@@ -17,9 +17,11 @@
 `define ALU_SUBU    3'b101
 `define ALU_SLTZ    3'b110
 `define ALU_AND     3'b111
+`define ALU_MUL     4'b1000
 
 //instruction operation code
 `define C_SPEC      6'b000000 // Special instructions (depends on function field)
+`define C_SPEC2     6'b011100
 `define C_ADDIU     6'b001001 // I-type, Integer Add Immediate Unsigned
                               //         Rd = Rs + Immed
 `define C_BEQ       6'b000100 // I-type, Branch On Equal
@@ -43,4 +45,5 @@
 `define F_SUBU      6'b100011 // R-type, Unsigned Subtract
                               //         Rd = Rs – Rt
 `define F_SRLV      6'b000110
+`define F_MUL       6'b000010
 `define F_ANY       6'b??????
