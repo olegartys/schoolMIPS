@@ -6,7 +6,7 @@
  * 
  * Copyright(c) 2017 Stanislav Zhelnio 
  *                   Alexander Romanov 
- */ 
+ */
 
 //ALU commands
 `define ALU_ADD     3'b000
@@ -17,6 +17,7 @@
 `define ALU_SUBU    3'b101
 `define ALU_SLTZ    3'b110
 `define ALU_AND     3'b111
+`define ALU_STORE_B 4'b1000
 
 //instruction operation code
 `define C_SPEC      6'b000000 // Special instructions (depends on function field)

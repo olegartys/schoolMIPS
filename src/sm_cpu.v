@@ -17,7 +17,9 @@ module sm_cpu
     input   [ 4:0]  regAddr,    // debug access reg address
     output  [31:0]  regData,    // debug access reg data
     output  [31:0]  imAddr,     // instruction memory address
-    input   [31:0]  imData      // instruction memory data
+    input   [31:0]  imData,     // instruction memory data
+    input   [ 4:0]  ramAddrB,   // debug RAM address
+    output  [31:0]  ramDataB    // debug RAM data
 );
     //control wires
     wire        pcSrc;
@@ -25,7 +27,8 @@ module sm_cpu
     wire        regWrite;
     wire        aluSrc;
     wire        aluZero;
-    wire [ 2:0] aluControl;
+    wire [ 3:0] aluControl;
+    wire ramRead;
 
     //program counter
     wire [31:0] pc;
@@ -69,7 +72,8 @@ module sm_cpu
     assign pcBranch = pcNext + signImm;
 
     //alu
-    wire [31:0] srcB = aluSrc ? (signExtend ? signImm : zeroImm) : rd2;
+    wire [31:0] srcB = ramRead ? ramData :
+        (aluSrc ? (signExtend ? signImm : zeroImm) : rd2);
 
     //shift
     wire shiftFromReg;
@@ -85,20 +89,21 @@ module sm_cpu
         .result     ( wd3          ) 
     );
 
-
     //RAM unit
-    reg  [31:0] ram_reg_a;
-    wire ram_we_a, ram_we_b;
-    wire [31:0] ram_addr_a = rd1 + signImm; // Base from register rd1 + signed offset
-    wire [31:0] ram_output_reg_a;
+    wire ramWE;
+    wire [31:0] ramAddr = rd1 + signImm; // Base from register rd1 + signed offset
+    wire [31:0] ramData;
 
     sm_ram sm_ram
     (
-        .data_a     ( rd1              ),
-        .addr_a     ( ram_addr_a       ),
-        .we_a       ( ram_we_a         ),
-        .q_a        ( ram_output_reg_a ),
-        .clk_a      ( clk              )
+        .data_a     ( rd2              ),
+        .data_b     ( 1'b0             ), // deprecate to write through b-port
+        .addr_a     ( ramAddr          ),
+        .addr_b     ( ramAddrB         ),
+        .we_a       ( ramWE            ),
+        .we_b       ( 1'b0             ), // deprecate to write through b-port
+        .q_a        ( ramData          ),
+        .q_b        ( ramDataB         )
     );
 
     //control
@@ -115,7 +120,8 @@ module sm_cpu
         .aluSrc       ( aluSrc       ),
         .aluControl   ( aluControl   ),
 
-        .ram_we_a     ( ram_we_a     )
+        .ramWE        ( ramWE        ),
+        .ramRead      ( ramRead      )
     );
 
 endmodule
@@ -131,11 +137,11 @@ module sm_control
     output reg       regDst, 
     output reg       regWrite, 
     output reg       aluSrc,
-    output reg [2:0] aluControl,
+    output reg [3:0] aluControl,
 
-    // RAM wires
-    output reg       ram_we_a
-
+    // RAM outputs
+    output reg       ramWE,
+    output reg       ramRead
 );
     reg          branch;
     reg          condZero;
@@ -154,7 +160,8 @@ module sm_control
         aluSrc      = 1'b0;
         aluControl  = `ALU_ADD;
 
-        ram_we_a    = 1'b0;
+        ramRead    = 1'b0;
+        ramWE    = 1'b0;
 
         casez( {cmdOper,cmdFunk} )
             default               : ;
@@ -176,7 +183,8 @@ module sm_control
 
 			{ `C_BGEZ,  `F_ANY  } : begin branch = 1'b1; condZero = 1'b1; aluControl = `ALU_SLTZ; end
 
-            { `C_LW,    `F_ANY  } : begin regWrite = 1'b1; end
+            { `C_LW,    `F_ANY  } : begin ramRead = 1'b1; regWrite = 1'b1; aluControl = `ALU_STORE_B; end
+            { `C_SW,    `F_ANY  } : begin ramWE = 1'b1; end
 
         endcase
             
@@ -188,7 +196,7 @@ module sm_alu
 (
     input  [31:0] srcA,
     input  [31:0] srcB,
-    input  [ 2:0] oper,
+    input  [ 3:0] oper,
     input  [ 4:0] shift,
     output        zero,
     output reg [31:0] result
@@ -204,6 +212,8 @@ module sm_alu
             `ALU_SUBU : result = srcA - srcB;
 			`ALU_SLTZ : result = (srcA & 'h80000) ? 1 : 0;
             `ALU_AND  : result = srcA & srcB;
+
+            `ALU_STORE_B : result = srcB;
         endcase
     end
 

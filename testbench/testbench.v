@@ -13,6 +13,8 @@ module sm_testbench;
     reg         rst_n;
     reg  [ 4:0] regAddr;
     wire [31:0] regData;
+    reg  [ 4:0] ramAddr;
+    wire [31:0] ramData;
 
     // ***** DUT start ************************
 
@@ -29,7 +31,9 @@ module sm_testbench;
         .regAddr ( regAddr ),
         .regData ( regData ),
         .imAddr  ( imAddr  ),
-        .imData  ( imData  )
+        .imData  ( imData  ),
+        .ramAddrB( ramAddr ),
+        .ramDataB( ramData )
     );
 
     // ***** DUT  end  ************************
@@ -61,6 +65,17 @@ module sm_testbench;
         for (i = 0; i < 32; i = i + 1)
             sm_cpu.rf.rf[i] = 0;
     end
+
+    task dumpRam
+    (
+    );
+        integer i;
+        begin
+            $write("--- RAM Dump ---\n");
+            for (i = 0; i < 16; i = i + 1)
+                $write("ram[%1x] = %1d\n", i, sm_cpu.sm_ram.ram[i]);
+        end
+    endtask
 
     task disasmInstr
     (
@@ -108,7 +123,10 @@ module sm_testbench;
                 { `C_BEQ,   `F_ANY  } : $write ("beq   $%1d, $%1d, %1d", cmdRs, cmdRt, cmdImmS + 1);
                 { `C_BNE,   `F_ANY  } : $write ("bne   $%1d, $%1d, %1d", cmdRs, cmdRt, cmdImmS + 1);
 					 
-			    { `C_BGEZ,	 `F_ANY  } : $write("bgze   $%1d, %1d", cmdRs, cmdImmS + 1);
+			    { `C_BGEZ,	 `F_ANY } : $write("bgze   $%1d, %1d", cmdRs, cmdImmS + 1);
+
+                { `C_LW,    `F_ANY  } : $write("lw     $%1d, %1d(%1d)", cmdRt, cmdImmS, cmdRs);
+                { `C_SW,    `F_ANY  } : $write("sw     $%1d, %1d(%1d)", cmdRt, cmdImmS, cmdRs);
             endcase
         end
 
@@ -133,6 +151,7 @@ module sm_testbench;
 
         if (cycle > Ncycle)
         begin
+            dumpRam();
             $display ("Timeout");
             $stop;
         end
