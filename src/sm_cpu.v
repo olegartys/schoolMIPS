@@ -103,7 +103,9 @@ module sm_cpu
         .we_a       ( ramWE            ),
         .we_b       ( 1'b0             ), // deprecate to write through b-port
         .q_a        ( ramData          ),
-        .q_b        ( ramDataB         )
+        .q_b        ( ramDataB         ),
+        .clk_a      ( clk              ),
+        .clk_b      ( clk              )
     );
 
     //control
