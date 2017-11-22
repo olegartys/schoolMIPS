@@ -34,7 +34,10 @@
 					// 		  else
 					// 		  		PC += 1
 
-`define C_ANDI      6'b001100										
+`define C_ANDI      6'b001100	
+
+`define C_SW        6'b101011
+`define C_LW        6'b100011									
 
 //instruction function field
 `define F_ADDU      6'b100001 // R-type, Integer Add Unsigned

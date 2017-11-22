@@ -85,6 +85,22 @@ module sm_cpu
         .result     ( wd3          ) 
     );
 
+
+    //RAM unit
+    reg  [31:0] ram_reg_a;
+    wire ram_we_a, ram_we_b;
+    wire [31:0] ram_addr_a = rd1 + signImm; // Base from register rd1 + signed offset
+    wire [31:0] ram_output_reg_a;
+
+    sm_ram sm_ram
+    (
+        .data_a     ( rd1              ),
+        .addr_a     ( ram_addr_a       ),
+        .we_a       ( ram_we_a         ),
+        .q_a        ( ram_output_reg_a ),
+        .clk_a      ( clk              )
+    );
+
     //control
     sm_control sm_control
     (
@@ -97,7 +113,9 @@ module sm_cpu
         .regDst       ( regDst       ), 
         .regWrite     ( regWrite     ), 
         .aluSrc       ( aluSrc       ),
-        .aluControl   ( aluControl   )
+        .aluControl   ( aluControl   ),
+
+        .ram_we_a     ( ram_we_a     )
     );
 
 endmodule
@@ -113,7 +131,11 @@ module sm_control
     output reg       regDst, 
     output reg       regWrite, 
     output reg       aluSrc,
-    output reg [2:0] aluControl
+    output reg [2:0] aluControl,
+
+    // RAM wires
+    output reg       ram_we_a
+
 );
     reg          branch;
     reg          condZero;
@@ -131,6 +153,8 @@ module sm_control
         regWrite    = 1'b0;
         aluSrc      = 1'b0;
         aluControl  = `ALU_ADD;
+
+        ram_we_a    = 1'b0;
 
         casez( {cmdOper,cmdFunk} )
             default               : ;
@@ -151,8 +175,11 @@ module sm_control
             { `C_BNE,   `F_ANY  } : begin branch = 1'b1; aluControl = `ALU_SUBU; end
 
 			{ `C_BGEZ,  `F_ANY  } : begin branch = 1'b1; condZero = 1'b1; aluControl = `ALU_SLTZ; end
-				
+
+            { `C_LW,    `F_ANY  } : begin regWrite = 1'b1; end
+
         endcase
+            
     end
 endmodule
 
