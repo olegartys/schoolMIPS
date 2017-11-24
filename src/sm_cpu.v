@@ -98,7 +98,7 @@ module sm_cpu
     (
         .data_a     ( rd2              ),
         .data_b     ( 1'b0             ), // deprecate to write through b-port
-        .addr_a     ( ramAddr          ),
+        .addr_a     ( ramAddr >> 2     ),
         .addr_b     ( ramAddrB         ),
         .we_a       ( ramWE            ),
         .we_b       ( 1'b0             ), // deprecate to write through b-port
