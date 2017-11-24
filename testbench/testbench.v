@@ -7,7 +7,7 @@ module sm_testbench;
 
     // simulation options
     parameter Tt     = 20;
-    parameter Ncycle = 120;
+    parameter Ncycle = 1020;
 
     reg         clk;
     reg         rst_n;
