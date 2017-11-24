@@ -49,7 +49,7 @@ module sm_cpu
     wire [ 4:0] a3  = regDst ? instr[15:11] : instr[20:16];
     wire [31:0] rd1;
     wire [31:0] rd2;
-    wire [31:0] wd3;
+    wire [31:0] wd3 = ramRead ? ramData : aluResult; // write to register either RAM value or result of ALU
 
     sm_register_file rf
     (
@@ -72,12 +72,12 @@ module sm_cpu
     assign pcBranch = pcNext + signImm;
 
     //alu
-    wire [31:0] srcB = ramRead ? ramData :
-        (aluSrc ? (signExtend ? signImm : zeroImm) : rd2);
+    wire [31:0] srcB = aluSrc ? (signExtend ? signImm : zeroImm) : rd2;
 
     //shift
     wire shiftFromReg;
     wire [4:0] shift = shiftFromReg ? (rd1 & 5'b11111) : instr[10:6];
+    wire [31:0] aluResult;
 
     sm_alu alu
     (
@@ -86,12 +86,12 @@ module sm_cpu
         .oper       ( aluControl   ),
         .shift      ( shift        ),
         .zero       ( aluZero      ),
-        .result     ( wd3          ) 
+        .result     ( aluResult    )
     );
 
     //RAM unit
     wire ramWE;
-    wire [31:0] ramAddr = rd1 + signImm; // Base from register rd1 + signed offset
+    wire [31:0] ramAddr = aluResult; // Base from register rd1 + signed offset
     wire [31:0] ramData;
 
     sm_ram sm_ram
@@ -163,7 +163,7 @@ module sm_control
         aluControl  = `ALU_ADD;
 
         ramRead    = 1'b0;
-        ramWE    = 1'b0;
+        ramWE      = 1'b0;
 
         casez( {cmdOper,cmdFunk} )
             default               : ;
@@ -185,8 +185,8 @@ module sm_control
 
 			{ `C_BGEZ,  `F_ANY  } : begin branch = 1'b1; condZero = 1'b1; aluControl = `ALU_SLTZ; end
 
-            { `C_LW,    `F_ANY  } : begin ramRead = 1'b1; regWrite = 1'b1; aluControl = `ALU_STORE_B; end
-            { `C_SW,    `F_ANY  } : begin ramWE = 1'b1; end
+            { `C_LW,    `F_ANY  } : begin aluSrc = 1'b1; aluControl = `ALU_ADD; ramRead = 1'b1; regWrite = 1'b1; end
+            { `C_SW,    `F_ANY  } : begin aluSrc = 1'b1; aluControl = `ALU_ADD; ramWE = 1'b1; end
 
         endcase
             

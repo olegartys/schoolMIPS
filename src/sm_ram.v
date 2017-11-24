@@ -4,13 +4,13 @@
 module sm_ram
 #(parameter DATA_WIDTH=32,
   parameter ADDR_WIDTH=4,
-  parameter DEBUG=0
+  parameter DEBUG=1
 )
 (
 	input [(DATA_WIDTH-1):0] data_a, data_b,
 	input [(ADDR_WIDTH-1):0] addr_a, addr_b,
 	input we_a, we_b, clk_a, clk_b,
-	output reg [(DATA_WIDTH-1):0] q_a, q_b
+	output [(DATA_WIDTH-1):0] q_a, q_b
 );
 	// Declare the RAM variable
 	reg [DATA_WIDTH-1:0] ram[2**ADDR_WIDTH-1:0];
@@ -19,11 +19,8 @@ module sm_ram
 		$readmemh("memory.hex", ram);
 	end
 
-	always @ (*)
-	begin
-		q_a <= ram[addr_a];
-		q_b <= ram[addr_b];
-	end
+	assign q_a = ram[addr_a];
+	assign q_b = ram[addr_b];
 
 	always @ (posedge clk_a)
 	begin
@@ -32,7 +29,6 @@ module sm_ram
 			if (DEBUG)
 				$write("\n--RAM--: write_a addr_a %d %d\n", data_a, addr_a);
 			ram[addr_a] <= data_a;
-			q_a <= data_a;
 		end
 	end
 
@@ -43,7 +39,6 @@ module sm_ram
 			if (DEBUG)
 				$write("\n--RAM--: write_b addr_b %d %d\n", data_b, addr_b);
 			ram[addr_b] <= data_b;
-			q_b <= data_b;
 		end
 	end
 
