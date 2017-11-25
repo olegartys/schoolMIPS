@@ -13,8 +13,6 @@ iverilog -g2005 -D SIMULATION -D ICARUS -I ../../../src -I ../../../testbench -s
 vvp -la.lst -n a.out -vcd
 
 # output
-if [[ $1 == "-m" ]]; then
-	gtkwave dump.vcd
-fi
+gtkwave dump.vcd
 
 cd ..
