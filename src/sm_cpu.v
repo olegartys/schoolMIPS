@@ -108,8 +108,8 @@ module sm_control
     input      [5:0] cmdFunk,
     input            aluZero,
     output           pcSrc,
-    output           signExtend,
-    output           shiftFromReg,
+    output reg       signExtend,
+    output reg       shiftFromReg,
     output reg       regDst, 
     output reg       regWrite, 
     output reg       aluSrc,
@@ -117,11 +117,8 @@ module sm_control
 );
     reg          branch;
     reg          condZero;
-    reg          _signExtend = 1'b1;
-    reg          _shiftFromReg = 1'b0;
+
     assign pcSrc = branch & (aluZero == condZero);
-    assign signExtend = _signExtend;
-    assign shiftFromReg = _shiftFromReg;
 
     always @ (*) begin
         branch      = 1'b0;
@@ -131,6 +128,9 @@ module sm_control
         aluSrc      = 1'b0;
         aluControl  = `ALU_ADD;
 
+        signExtend = 1'b1;
+        shiftFromReg = 1'b0;
+
         casez( {cmdOper,cmdFunk} )
             default               : ;
 
@@ -139,13 +139,13 @@ module sm_control
             { `C_SPEC,  `F_SRL  } : begin regDst = 1'b1; regWrite = 1'b1; aluControl = `ALU_SRL;  end
             { `C_SPEC,  `F_SLTU } : begin regDst = 1'b1; regWrite = 1'b1; aluControl = `ALU_SLTU; end
             { `C_SPEC,  `F_SUBU } : begin regDst = 1'b1; regWrite = 1'b1; aluControl = `ALU_SUBU; end
-            { `C_SPEC,  `F_SRLV } : begin regDst = 1'b1; _shiftFromReg = 1'b1; regWrite = 1'b1; aluControl = `ALU_SRL; end
+            { `C_SPEC,  `F_SRLV } : begin regDst = 1'b1; shiftFromReg = 1'b1; regWrite = 1'b1; aluControl = `ALU_SRL; end
 
             { `C_SPEC2,  `F_MUL } : begin regDst = 1'b1; regWrite = 1'b1; aluControl = `ALU_MUL; end
 
             { `C_ADDIU, `F_ANY  } : begin regWrite = 1'b1; aluSrc = 1'b1; aluControl = `ALU_ADD;  end
             { `C_LUI,   `F_ANY  } : begin regWrite = 1'b1; aluSrc = 1'b1; aluControl = `ALU_LUI;  end
-            { `C_ANDI,  `F_ANY  } : begin regWrite = 1'b1; _signExtend = 1'b0; aluSrc = 1'b1; aluControl = `ALU_AND; end
+            { `C_ANDI,  `F_ANY  } : begin regWrite = 1'b1; signExtend = 1'b0; aluSrc = 1'b1; aluControl = `ALU_AND; end
 
             { `C_BEQ,   `F_ANY  } : begin branch = 1'b1; condZero = 1'b1; aluControl = `ALU_SUBU; end
             { `C_BNE,   `F_ANY  } : begin branch = 1'b1; aluControl = `ALU_SUBU; end
